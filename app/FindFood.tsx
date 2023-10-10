@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react"
 import { getLongAndLat } from "./utils"
-import { RiRoadMapFill } from "react-icons/ri"
-import { CgSpinner } from "react-icons/cg"
 import axios from "axios"
 import {
     Alert,
     Autocomplete,
     Button,
+    Card,
+    CardContent,
     Checkbox,
+    CircularProgress,
     Divider,
     FormControlLabel,
     FormGroup,
@@ -51,8 +52,12 @@ function FindFood() {
     const [numRating, setNumRating] = useState<string>("1000")
     const [mileRange, setMileRange] = useState<number>(1.5)
     const [resLoading, toggleResLoading] = useState(false)
-    const [results, setResults] = useState<Result[] | undefined>()
-    const [formError, setFormError] = useState<"currRating" | "numRating" | "mileRange" | undefined>(undefined)
+    const [results, setResults] = useState<Array<Result> | undefined>()
+    const [formError, setFormError] = useState<"currRating" | "numRating" | "mileRange" | "location" | undefined>(
+        undefined,
+    )
+
+    console.log(results)
 
     const [autocompleteLocationName, setAutocompleteLocationName] = useState<string>("")
 
@@ -74,18 +79,18 @@ function FindFood() {
 
     const getFormalLocation = async () => {
         /*
-    Payload
-    {
-      "ip": "
-      "city": "San Francisco",
-      "region": "California",
-      "region_code": "CA",
-      "country": "US",
-      "country_name": "United States",
-      "continent_code": "NA",
-      "in_eu": false,
-      "postal": "94107",
-    */
+        Payload
+        {
+        "ip": "
+        "city": "San Francisco",
+        "region": "California",
+        "region_code": "CA",
+        "country": "US",
+        "country_name": "United States",
+        "continent_code": "NA",
+        "in_eu": false,
+        "postal": "94107",
+        */
         const locationDetails = await axios.get("https://ipapi.co/json/")
         return {
             city: locationDetails.data.city,
@@ -104,19 +109,23 @@ function FindFood() {
         } else if (parseFloat(numRating) <= 0) {
             setFormError("numRating")
             return
+        } else if (!location || location === "loading") {
+            setFormError("location")
+            return
         } else {
             setFormError(undefined)
         }
-        // if (location !== "loading" && location !== undefined) {
-        //     toggleResLoading(true)
-        //     const gmapsRes = await axios.get(
-        //         `https://52da-65-112-8-52.ngrok.io/findfood?location=${location.latitude},${
-        //             location.longitude
-        //         }&distance=${mileRange || 1.5}&stars=${currRating}&reviews=${numRating}`,
-        //     )
-        //     setResults(gmapsRes.data)
-        //     toggleResLoading(false)
-        // }
+
+        toggleResLoading(true)
+
+        const res = await axios.get(
+            `/api/findfood?location=${location.latitude},${location.longitude}&distance=${
+                mileRange || 1.5
+            }&stars=${currRating}&reviews=${numRating}`,
+        )
+
+        setResults(res.data)
+        toggleResLoading(false)
     }
 
     useEffect(() => {
@@ -163,193 +172,183 @@ function FindFood() {
     }, [sortBy])
 
     return (
-        <div>
-            <div>
-                <Grid container gap={2} direction="column">
-                    <Typography variant="h2">🍽 Plates</Typography>
-                    <Typography variant="caption">Made with ❤️ by Ivan Zhang, Derek Zheng, and Eric Li</Typography>
+        <Grid container gap={2} direction="column">
+            <Typography variant="h2">🍽 Plates</Typography>
+            <Typography variant="caption">Made with ❤️ by Ivan Zhang, Derek Zheng, and Eric Li</Typography>
 
-                    <Divider />
+            <Divider />
 
-                    <Typography variant="h5">Where are you?</Typography>
-                    <FormGroup>
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={locationOpt === "device"}
-                                    onChange={(event) => {
-                                        if (event.target.checked) {
-                                            setLocationOpt("device")
-                                        } else {
-                                            setLocationOpt(undefined)
-                                        }
-                                    }}
-                                    icon={<RadioButtonUncheckedIcon />}
-                                    checkedIcon={<RadioButtonCheckedIcon />}
-                                />
-                            }
-                            label="Use my location"
+            <Typography variant="h5">Where are you?</Typography>
+            {formError === "location" && <Alert severity="error">Select a location</Alert>}
+            <FormGroup>
+                <FormControlLabel
+                    control={
+                        <Checkbox
+                            checked={locationOpt === "device"}
+                            onChange={(event) => {
+                                if (event.target.checked) {
+                                    setLocationOpt("device")
+                                } else {
+                                    setLocationOpt(undefined)
+                                }
+                            }}
+                            icon={<RadioButtonUncheckedIcon />}
+                            checkedIcon={<RadioButtonCheckedIcon />}
                         />
-                        {locationOpt === "device" && (
-                            <>
-                                {location &&
-                                    (location === "loading" ? (
-                                        <LinearProgress />
-                                    ) : (
-                                        locationDetails && (
-                                            <Alert severity="info">
-                                                {locationDetails.city}, {locationDetails.region},{" "}
-                                                {locationDetails.postal}. Latitude: {location.latitude.toFixed(2)},
-                                                Longitude: {location.longitude.toFixed(2)}
-                                            </Alert>
-                                        )
-                                    ))}
-                                {locError && (
-                                    <Alert severity="error">
-                                        Location not loading? Make sure location services are enabled for your browser.
+                    }
+                    label="Use my location"
+                />
+                {locationOpt === "device" && (
+                    <>
+                        {location &&
+                            (location === "loading" ? (
+                                <LinearProgress />
+                            ) : (
+                                locationDetails && (
+                                    <Alert severity="info">
+                                        {locationDetails.city}, {locationDetails.region}, {locationDetails.postal}.
+                                        Latitude: {location.latitude.toFixed(2)}, Longitude:{" "}
+                                        {location.longitude.toFixed(2)}
                                     </Alert>
-                                )}
-                            </>
+                                )
+                            ))}
+                        {locError && (
+                            <Alert severity="error">
+                                Location not loading? Make sure location services are enabled for your browser.
+                            </Alert>
                         )}
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={locationOpt === "input"}
-                                    onChange={(event) => {
-                                        if (event.target.checked) {
-                                            setLocationOpt("input")
-                                        } else {
-                                            setLocationOpt(undefined)
-                                        }
-                                    }}
-                                    icon={<RadioButtonUncheckedIcon />}
-                                    checkedIcon={<RadioButtonCheckedIcon />}
-                                />
-                            }
-                            label="Search"
-                        />
-                    </FormGroup>
-
-                    <Autocomplete
-                        freeSolo
-                        disableClearable
-                        options={[]}
-                        getOptionLabel={(option) => option}
-                        renderInput={(params) => (
-                            <TextField {...params} inputRef={ref} label="Search for places" variant="outlined" />
-                        )}
-                        inputValue={autocompleteLocationName}
-                        onInputChange={(event) =>
-                            setAutocompleteLocationName((event.target as HTMLTextAreaElement).value)
-                        }
-                        sx={{
-                            display: locationOpt === "input" ? "block" : "none",
-                        }}
-                    />
-
-                    <Divider />
-
-                    <Typography variant="h5">What ratings?</Typography>
-                    <Typography variant="body1">
-                        We&apos;ve found that top restaurants are usually &gt; 4.0 stars with &gt;1,000 reviews
-                    </Typography>
-                    <Grid container>
-                        <Grid item xs={6}>
-                            <TextField
-                                label="Min. stars"
-                                type="number"
-                                onChange={(e) => setCurrRating(e.target.value)}
-                                value={currRating}
-                                error={formError === "currRating"}
-                                helperText={formError === "currRating" ? "Enter a number between 1 to 5" : ""}
-                            />
-                        </Grid>
-                        <Grid item xs={6}>
-                            <TextField
-                                label="# reviews"
-                                type="number"
-                                onChange={(e) => setNumRating(e.target.value)}
-                                value={numRating}
-                                error={formError === "numRating"}
-                                helperText={formError === "numRating" ? "Enter a positive number" : ""}
-                            />
-                        </Grid>
-                    </Grid>
-                    <Typography variant="h5">What else?</Typography>
-                    <Grid container direction="row">
-                        <TextField
-                            label="Max miles away"
-                            placeholder="1.5"
-                            type="number"
-                            onChange={(e) => setMileRange(parseFloat(e.target.value))}
-                            value={mileRange}
-                            error={formError === "mileRange"}
-                            helperText={formError === "mileRange" ? "Enter a positive number" : ""}
-                        />
-                    </Grid>
-                    <Button onClick={() => search()} variant="contained" color="primary">
-                        {results && results.length > 0 ? "Search again" : "Find me food!"}
-                    </Button>
-                </Grid>
-                {(results || resLoading) && (
-                    <div>
-                        <div />
-                        <div>
-                            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                                <option disabled selected>
-                                    Sort results by
-                                </option>
-                                <option value="distance-inc">Distance (Close to Far)</option>
-                                <option value="distance-desc">Distance (Far to Close)</option>
-                                <option value="price_level-inc">Cost (Cheap - Expensive)</option>
-                                <option value="price_level-desc">Cost (Expensive to Cheap)</option>
-                                <option value="reviews-inc">Reviews (Few to Many)</option>
-                                <option value="reviews-desc">Reviews (Many - Few)</option>
-                                <option value="stars-inc">Reviews (Worst to Best)</option>
-                                <option value="stars-desc">Reviews (Best - Worst)</option>
-                            </select>
-                        </div>
-                    </div>
+                    </>
                 )}
-                <div>
-                    {results && results.length > 0 ? (
-                        results.map(({ name, price_level, distance, reviews, stars, open_now, place_id }) => (
-                            <div key={name}>
-                                <div>
-                                    <div>
-                                        {name}
-                                        <button onClick={() => openMaps(place_id)}>
-                                            <RiRoadMapFill />
-                                        </button>
-                                    </div>
-                                    <div>
-                                        <div>
-                                            <span>
-                                                {stars} stars with {reviews} reviews
-                                            </span>
-                                        </div>
-                                        <span>
-                                            {Array(price_level).fill("$").join("")} · {distance.toFixed(2)} miles ·{" "}
-                                            {open_now ? <span>Open</span> : <span>Closed</span>}
-                                        </span>
-                                    </div>
-                                </div>
+                <FormControlLabel
+                    control={
+                        <Checkbox
+                            checked={locationOpt === "input"}
+                            onChange={(event) => {
+                                if (event.target.checked) {
+                                    setLocationOpt("input")
+                                } else {
+                                    setLocationOpt(undefined)
+                                }
+                            }}
+                            icon={<RadioButtonUncheckedIcon />}
+                            checkedIcon={<RadioButtonCheckedIcon />}
+                        />
+                    }
+                    label="Search"
+                />
+            </FormGroup>
+
+            <Autocomplete
+                freeSolo
+                disableClearable
+                options={[]}
+                getOptionLabel={(option) => option}
+                renderInput={(params) => (
+                    <TextField {...params} inputRef={ref} label="Search for places" variant="outlined" />
+                )}
+                inputValue={autocompleteLocationName}
+                onInputChange={(event) => setAutocompleteLocationName((event.target as HTMLTextAreaElement).value)}
+                sx={{
+                    display: locationOpt === "input" ? "block" : "none",
+                }}
+            />
+
+            <Divider />
+
+            <Typography variant="h5">What ratings?</Typography>
+            <Typography variant="body1">
+                We&apos;ve found that top restaurants are usually &gt; 4.0 stars with &gt;1,000 reviews
+            </Typography>
+            <Grid container>
+                <Grid item xs={6}>
+                    <TextField
+                        label="Min. stars"
+                        type="number"
+                        onChange={(e) => setCurrRating(e.target.value)}
+                        value={currRating}
+                        error={formError === "currRating"}
+                        helperText={formError === "currRating" ? "Enter a number between 1 to 5" : ""}
+                    />
+                </Grid>
+                <Grid item xs={6}>
+                    <TextField
+                        label="# reviews"
+                        type="number"
+                        onChange={(e) => setNumRating(e.target.value)}
+                        value={numRating}
+                        error={formError === "numRating"}
+                        helperText={formError === "numRating" ? "Enter a positive number" : ""}
+                    />
+                </Grid>
+            </Grid>
+            <Typography variant="h5">What else?</Typography>
+            <Grid container direction="row">
+                <TextField
+                    label="Max miles away"
+                    placeholder="1.5"
+                    type="number"
+                    onChange={(e) => setMileRange(parseFloat(e.target.value))}
+                    value={mileRange}
+                    error={formError === "mileRange"}
+                    helperText={formError === "mileRange" ? "Enter a positive number" : ""}
+                />
+            </Grid>
+            <Button onClick={() => search()} variant="contained" color="primary">
+                {results && results.length > 0 ? "Search again" : "Find me food!"}
+            </Button>
+
+            <Divider />
+
+            {/* {(results || resLoading) && (
+                        <div>
+                            <div />
+                            <div>
+                                <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                                    <option disabled selected>
+                                        Sort results by
+                                    </option>
+                                    <option value="distance-inc">Distance (Close to Far)</option>
+                                    <option value="distance-desc">Distance (Far to Close)</option>
+                                    <option value="price_level-inc">Cost (Cheap - Expensive)</option>
+                                    <option value="price_level-desc">Cost (Expensive to Cheap)</option>
+                                    <option value="reviews-inc">Reviews (Few to Many)</option>
+                                    <option value="reviews-desc">Reviews (Many - Few)</option>
+                                    <option value="stars-inc">Reviews (Worst to Best)</option>
+                                    <option value="stars-desc">Reviews (Best - Worst)</option>
+                                </select>
                             </div>
-                        ))
-                    ) : results && results.length === 0 ? (
-                        <span>No Results Found!</span>
-                    ) : (
-                        resLoading && (
-                            <>
-                                <div>Loading food 🤤</div>
-                                <CgSpinner />
-                            </>
-                        )
-                    )}
-                    <div />
-                </div>
-            </div>
-        </div>
+                        </div>
+                    )} */}
+
+            {results && results.length > 0 ? (
+                results.map(({ name, price_level, distance, reviews, stars, open_now, place_id }) => (
+                    <Card key={name}>
+                        <CardContent>
+                            <Typography variant="h6">{name}</Typography>
+                            <Button onClick={() => openMaps(place_id)} variant="outlined">
+                                Open in Maps
+                            </Button>
+                            <Typography variant="body1">
+                                {stars} stars with {reviews} reviews
+                            </Typography>
+                            <Typography variant="body1">
+                                {Array(price_level).fill("$").join("")} · {distance.toFixed(2)} miles ·{" "}
+                                {open_now ? <span>Open</span> : <span>Closed</span>}
+                            </Typography>
+                        </CardContent>
+                    </Card>
+                ))
+            ) : results && results.length === 0 ? (
+                <Typography variant="body1">No results found</Typography>
+            ) : (
+                resLoading && (
+                    <>
+                        <Typography variant="body1">Loading food 🤤</Typography>
+                        <CircularProgress />
+                    </>
+                )
+            )}
+        </Grid>
     )
 }
 
