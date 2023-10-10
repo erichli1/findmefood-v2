@@ -14,22 +14,22 @@ interface ResultFilterParams {
 }
 
 export async function GET(request: NextRequest) {
-    return NextResponse.json(
-        [
-            {
-                distance: 0.16841699773090313,
-                name: "Russell House Tavern",
-                open_now: true,
-                place_id: "ChIJ2w69uEJ344kRKVe3Zf0YBK8",
-                price_level: 2,
-                reviews: 2520,
-                stars: 4.3,
-            },
-        ],
-        {
-            status: 200,
-        },
-    )
+    // return NextResponse.json(
+    //     [
+    //         {
+    //             distance: 0.16841699773090313,
+    //             name: "Russell House Tavern",
+    //             open_now: true,
+    //             place_id: "ChIJ2w69uEJ344kRKVe3Zf0YBK8",
+    //             price_level: 2,
+    //             reviews: 2520,
+    //             stars: 4.3,
+    //         },
+    //     ],
+    //     {
+    //         status: 200,
+    //     },
+    // )
 
     return await getNearbyRestaurants(request)
 }

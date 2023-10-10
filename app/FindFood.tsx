@@ -10,10 +10,14 @@ import {
     Checkbox,
     CircularProgress,
     Divider,
+    FormControl,
     FormControlLabel,
     FormGroup,
     Grid,
+    InputLabel,
     LinearProgress,
+    MenuItem,
+    Select,
     TextField,
     Typography,
 } from "@mui/material"
@@ -35,7 +39,7 @@ type LocationOpt = "device" | "input" | undefined
 
 function FindFood() {
     const [locationOpt, setLocationOpt] = useState<LocationOpt>()
-    const [sortBy, setSortBy] = useState<string | undefined>()
+    const [sortBy, setSortBy] = useState<string>("")
     const [location, setLocation] = useState<
         | {
               latitude: number
@@ -56,8 +60,6 @@ function FindFood() {
     const [formError, setFormError] = useState<"currRating" | "numRating" | "mileRange" | "location" | undefined>(
         undefined,
     )
-
-    console.log(results)
 
     const [autocompleteLocationName, setAutocompleteLocationName] = useState<string>("")
 
@@ -179,7 +181,9 @@ function FindFood() {
             <Divider />
 
             <Typography variant="h5">Where are you?</Typography>
-            {formError === "location" && <Alert severity="error">Select a location</Alert>}
+            {formError === "location" && (!location || location === "loading") && (
+                <Alert severity="error">Select a location</Alert>
+            )}
             <FormGroup>
                 <FormControlLabel
                     control={
@@ -299,35 +303,38 @@ function FindFood() {
 
             <Divider />
 
-            {/* {(results || resLoading) && (
-                        <div>
-                            <div />
-                            <div>
-                                <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                                    <option disabled selected>
-                                        Sort results by
-                                    </option>
-                                    <option value="distance-inc">Distance (Close to Far)</option>
-                                    <option value="distance-desc">Distance (Far to Close)</option>
-                                    <option value="price_level-inc">Cost (Cheap - Expensive)</option>
-                                    <option value="price_level-desc">Cost (Expensive to Cheap)</option>
-                                    <option value="reviews-inc">Reviews (Few to Many)</option>
-                                    <option value="reviews-desc">Reviews (Many - Few)</option>
-                                    <option value="stars-inc">Reviews (Worst to Best)</option>
-                                    <option value="stars-desc">Reviews (Best - Worst)</option>
-                                </select>
-                            </div>
-                        </div>
-                    )} */}
+            {!resLoading && results && results.length > 0 && (
+                <FormControl fullWidth>
+                    <InputLabel id="filter-results-label">Sort by</InputLabel>
+                    <Select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        labelId="filter-results-label"
+                        variant="standard"
+                    >
+                        <MenuItem disabled selected value="">
+                            Sort results by
+                        </MenuItem>
+                        <MenuItem value="distance-inc">Distance (Close to Far)</MenuItem>
+                        <MenuItem value="distance-desc">Distance (Far to Close)</MenuItem>
+                        <MenuItem value="price_level-inc">Cost (Cheap - Expensive)</MenuItem>
+                        <MenuItem value="price_level-desc">Cost (Expensive to Cheap)</MenuItem>
+                        <MenuItem value="reviews-inc">Reviews (Few to Many)</MenuItem>
+                        <MenuItem value="reviews-desc">Reviews (Many - Few)</MenuItem>
+                        <MenuItem value="stars-inc">Reviews (Worst to Best)</MenuItem>
+                        <MenuItem value="stars-desc">Reviews (Best - Worst)</MenuItem>
+                    </Select>
+                </FormControl>
+            )}
 
             {results && results.length > 0 ? (
                 results.map(({ name, price_level, distance, reviews, stars, open_now, place_id }) => (
                     <Card key={name}>
                         <CardContent>
                             <Typography variant="h6">{name}</Typography>
-                            <Button onClick={() => openMaps(place_id)} variant="outlined">
+                            {/* <Button onClick={() => openMaps(place_id)} variant="outlined">
                                 Open in Maps
-                            </Button>
+                            </Button> */}
                             <Typography variant="body1">
                                 {stars} stars with {reviews} reviews
                             </Typography>
@@ -339,13 +346,13 @@ function FindFood() {
                     </Card>
                 ))
             ) : results && results.length === 0 ? (
-                <Typography variant="body1">No results found</Typography>
+                <Alert severity="info">No results found</Alert>
             ) : (
                 resLoading && (
-                    <>
-                        <Typography variant="body1">Loading food 🤤</Typography>
+                    <Grid container gap={2} direction="column" justifyContent="center" alignItems="center">
                         <CircularProgress />
-                    </>
+                        <Typography variant="body1">Loading food 🤤</Typography>
+                    </Grid>
                 )
             )}
         </Grid>
