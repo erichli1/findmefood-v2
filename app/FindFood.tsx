@@ -4,11 +4,14 @@ import axios from "axios"
 import {
     Alert,
     Autocomplete,
+    Box,
     Button,
     Card,
+    CardActions,
     CardContent,
     Checkbox,
     CircularProgress,
+    Container,
     Divider,
     FormControl,
     FormControlLabel,
@@ -24,6 +27,8 @@ import {
 import { usePlacesWidget } from "react-google-autocomplete"
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked"
 import RadioButtonCheckedIcon from "@mui/icons-material/RadioButtonChecked"
+import ArrowOutwardIcon from "@mui/icons-material/ArrowOutward"
+import { Header } from "./components/Header"
 
 type Result = {
     distance: number
@@ -180,128 +185,144 @@ function FindFood() {
 
             <Divider />
 
-            <Typography variant="h5">Where are you?</Typography>
-            {formError === "location" && (!location || location === "loading") && (
-                <Alert severity="error">Select a location</Alert>
-            )}
-            <FormGroup>
-                <FormControlLabel
-                    control={
-                        <Checkbox
-                            checked={locationOpt === "device"}
-                            onChange={(event) => {
-                                if (event.target.checked) {
-                                    setLocationOpt("device")
-                                } else {
-                                    setLocationOpt(undefined)
-                                }
-                            }}
-                            icon={<RadioButtonUncheckedIcon />}
-                            checkedIcon={<RadioButtonCheckedIcon />}
-                        />
-                    }
-                    label="Use my location"
-                />
-                {locationOpt === "device" && (
-                    <>
-                        {location &&
-                            (location === "loading" ? (
-                                <LinearProgress />
-                            ) : (
-                                locationDetails && (
-                                    <Alert severity="info">
-                                        {locationDetails.city}, {locationDetails.region}, {locationDetails.postal}.
-                                        Latitude: {location.latitude.toFixed(2)}, Longitude:{" "}
-                                        {location.longitude.toFixed(2)}
-                                    </Alert>
-                                )
-                            ))}
-                        {locError && (
-                            <Alert severity="error">
-                                Location not loading? Make sure location services are enabled for your browser.
-                            </Alert>
-                        )}
-                    </>
+            <Box>
+                <Header text={"Where are you?"} />
+                {formError === "location" && (!location || location === "loading") && (
+                    <Alert severity="error">Select a location</Alert>
                 )}
-                <FormControlLabel
-                    control={
-                        <Checkbox
-                            checked={locationOpt === "input"}
-                            onChange={(event) => {
-                                if (event.target.checked) {
-                                    setLocationOpt("input")
-                                } else {
-                                    setLocationOpt(undefined)
-                                }
-                            }}
-                            icon={<RadioButtonUncheckedIcon />}
-                            checkedIcon={<RadioButtonCheckedIcon />}
-                        />
-                    }
-                    label="Search"
+                <FormGroup>
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={locationOpt === "device"}
+                                onChange={(event) => {
+                                    if (event.target.checked) {
+                                        setLocationOpt("device")
+                                    } else {
+                                        setLocationOpt(undefined)
+                                    }
+                                }}
+                                icon={<RadioButtonUncheckedIcon />}
+                                checkedIcon={<RadioButtonCheckedIcon />}
+                            />
+                        }
+                        label="Use my location"
+                    />
+                    {locationOpt === "device" && (
+                        <>
+                            {location &&
+                                (location === "loading" ? (
+                                    <LinearProgress />
+                                ) : (
+                                    locationDetails && (
+                                        <Alert severity="info">
+                                            {locationDetails.city}, {locationDetails.region}, {locationDetails.postal}.
+                                            Latitude: {location.latitude.toFixed(2)}, Longitude:{" "}
+                                            {location.longitude.toFixed(2)}
+                                        </Alert>
+                                    )
+                                ))}
+                            {locError && (
+                                <Alert severity="error">
+                                    Location not loading? Make sure location services are enabled for your browser.
+                                </Alert>
+                            )}
+                        </>
+                    )}
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={locationOpt === "input"}
+                                onChange={(event) => {
+                                    if (event.target.checked) {
+                                        setLocationOpt("input")
+                                    } else {
+                                        setLocationOpt(undefined)
+                                    }
+                                }}
+                                icon={<RadioButtonUncheckedIcon />}
+                                checkedIcon={<RadioButtonCheckedIcon />}
+                            />
+                        }
+                        label="Search"
+                    />
+                </FormGroup>
+                <Autocomplete
+                    freeSolo
+                    disableClearable
+                    options={[]}
+                    getOptionLabel={(option) => option}
+                    renderInput={(params) => (
+                        <TextField {...params} inputRef={ref} label="Search for places" variant="outlined" />
+                    )}
+                    inputValue={autocompleteLocationName}
+                    onInputChange={(event) => setAutocompleteLocationName((event.target as HTMLTextAreaElement).value)}
+                    sx={{
+                        display: locationOpt === "input" ? "block" : "none",
+                    }}
                 />
-            </FormGroup>
-
-            <Autocomplete
-                freeSolo
-                disableClearable
-                options={[]}
-                getOptionLabel={(option) => option}
-                renderInput={(params) => (
-                    <TextField {...params} inputRef={ref} label="Search for places" variant="outlined" />
-                )}
-                inputValue={autocompleteLocationName}
-                onInputChange={(event) => setAutocompleteLocationName((event.target as HTMLTextAreaElement).value)}
-                sx={{
-                    display: locationOpt === "input" ? "block" : "none",
-                }}
-            />
+            </Box>
 
             <Divider />
 
-            <Typography variant="h5">What ratings?</Typography>
-            <Typography variant="body1">
-                We&apos;ve found that top restaurants are usually &gt; 4.0 stars with &gt;1,000 reviews
-            </Typography>
-            <Grid container>
-                <Grid item xs={6}>
-                    <TextField
-                        label="Min. stars"
-                        type="number"
-                        onChange={(e) => setCurrRating(e.target.value)}
-                        value={currRating}
-                        error={formError === "currRating"}
-                        helperText={formError === "currRating" ? "Enter a number between 1 to 5" : ""}
-                    />
+            <Grid container gap={1}>
+                <Header text={"What ratings?"} />
+                <Typography variant="body1">
+                    We&apos;ve found that top restaurants are usually &gt; 4.0 stars with &gt;1,000 reviews
+                </Typography>
+                <Grid container sx={{ paddingY: "0.5em" }}>
+                    <Grid item xs={6}>
+                        <TextField
+                            label="Min. stars"
+                            type="number"
+                            onChange={(e) => setCurrRating(e.target.value)}
+                            value={currRating}
+                            error={formError === "currRating"}
+                            helperText={formError === "currRating" ? "Enter a number between 1 to 5" : ""}
+                        />
+                    </Grid>
+                    <Grid item xs={6}>
+                        <TextField
+                            label="# reviews"
+                            type="number"
+                            onChange={(e) => setNumRating(e.target.value)}
+                            value={numRating}
+                            error={formError === "numRating"}
+                            helperText={formError === "numRating" ? "Enter a positive number" : ""}
+                        />
+                    </Grid>
                 </Grid>
-                <Grid item xs={6}>
+            </Grid>
+
+            <Divider />
+
+            <Grid container gap={1}>
+                <Header text={"What else?"} />
+                <Grid container direction="row">
                     <TextField
-                        label="# reviews"
+                        label="Max miles away"
+                        placeholder="1.5"
                         type="number"
-                        onChange={(e) => setNumRating(e.target.value)}
-                        value={numRating}
-                        error={formError === "numRating"}
-                        helperText={formError === "numRating" ? "Enter a positive number" : ""}
+                        onChange={(e) => setMileRange(parseFloat(e.target.value))}
+                        value={mileRange}
+                        error={formError === "mileRange"}
+                        helperText={formError === "mileRange" ? "Enter a positive number" : ""}
                     />
                 </Grid>
             </Grid>
-            <Typography variant="h5">What else?</Typography>
-            <Grid container direction="row">
-                <TextField
-                    label="Max miles away"
-                    placeholder="1.5"
-                    type="number"
-                    onChange={(e) => setMileRange(parseFloat(e.target.value))}
-                    value={mileRange}
-                    error={formError === "mileRange"}
-                    helperText={formError === "mileRange" ? "Enter a positive number" : ""}
-                />
-            </Grid>
+
             <Button onClick={() => search()} variant="contained" color="primary">
                 {results && results.length > 0 ? "Search again" : "Find me food!"}
             </Button>
 
             <Divider />
+
+            {resLoading && (
+                <Grid container gap={2} direction="column" justifyContent="center" alignItems="center">
+                    <CircularProgress />
+                    <Typography variant="body1">Loading food 🤤</Typography>
+                </Grid>
+            )}
 
             {!resLoading && results && results.length > 0 && (
                 <FormControl fullWidth>
@@ -327,34 +348,31 @@ function FindFood() {
                 </FormControl>
             )}
 
-            {results && results.length > 0 ? (
-                results.map(({ name, price_level, distance, reviews, stars, open_now, place_id }) => (
-                    <Card key={name}>
-                        <CardContent>
-                            <Typography variant="h6">{name}</Typography>
-                            <Button onClick={() => openMaps(place_id)} variant="outlined">
-                                Open in Maps
-                            </Button>
-                            <Typography variant="body1">
-                                {stars} stars with {reviews} reviews
-                            </Typography>
-                            <Typography variant="body1">
-                                {Array(price_level).fill("$").join("")} · {distance.toFixed(2)} miles ·{" "}
-                                {open_now ? <span>Open</span> : <span>Closed</span>}
-                            </Typography>
-                        </CardContent>
-                    </Card>
-                ))
-            ) : results && results.length === 0 ? (
-                <Alert severity="info">No results found</Alert>
-            ) : (
-                resLoading && (
-                    <Grid container gap={2} direction="column" justifyContent="center" alignItems="center">
-                        <CircularProgress />
-                        <Typography variant="body1">Loading food 🤤</Typography>
-                    </Grid>
-                )
-            )}
+            {!resLoading &&
+                results &&
+                (results.length > 0 ? (
+                    results.map(({ name, price_level, distance, reviews, stars, open_now, place_id }, index) => (
+                        <Card key={index}>
+                            <CardContent>
+                                <Typography variant="subtitle1" fontWeight="bold">
+                                    {name}
+                                </Typography>
+                                <Typography variant="body1">
+                                    {stars} stars with {reviews} reviews
+                                </Typography>
+                                <Typography variant="body1">
+                                    {Array(price_level).fill("$").join("")} · {distance.toFixed(2)} miles ·{" "}
+                                    {open_now ? <span>Open now</span> : <span>Closed</span>}
+                                </Typography>
+                            </CardContent>
+                            <CardActions sx={{ paddingTop: 0 }}>
+                                <Button onClick={() => openMaps(place_id)}>Open in Google Maps</Button>
+                            </CardActions>
+                        </Card>
+                    ))
+                ) : (
+                    <Alert severity="info">No results found</Alert>
+                ))}
         </Grid>
     )
 }
