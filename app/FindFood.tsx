@@ -74,7 +74,7 @@ function FindFood() {
     })
 
     const openMaps = async (placeId: string) => {
-        const res = await axios.get(`https://52da-65-112-8-52.ngrok.io/geturl?place_id=${placeId}`)
+        const res = await axios.get(`/api/geturl?place_id=${placeId}`)
         console.log(res)
         window.open(res.data.url, "_blank")
     }
@@ -332,9 +332,9 @@ function FindFood() {
                     <Card key={name}>
                         <CardContent>
                             <Typography variant="h6">{name}</Typography>
-                            {/* <Button onClick={() => openMaps(place_id)} variant="outlined">
+                            <Button onClick={() => openMaps(place_id)} variant="outlined">
                                 Open in Maps
-                            </Button> */}
+                            </Button>
                             <Typography variant="body1">
                                 {stars} stars with {reviews} reviews
                             </Typography>
