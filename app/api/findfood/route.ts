@@ -58,29 +58,39 @@ const getNearbyRestaurants = async (req: NextRequest) => {
     }
 
     const restaurants: Array<any> = []
-    const nextPageTokens: Array<string | undefined> = ["", "", "", ""]
+
+    const PAGINATIONS = 2
+
+    // TODO: Can parallelize 4 different calls by using minprice, maxprice once GMaps API issues resolved
+    const nextPageTokens: Array<string | undefined> = [""]
 
     let counter = 0
 
-    while (counter < 2) {
+    while (counter <= PAGINATIONS) {
         const apiPromises = nextPageTokens.map((nextPageToken, index) => {
-            const priceSpecificParams = {
-                minprice: index + 1,
-                maxprice: index + 1,
-                ...(nextPageToken !== undefined && nextPageToken !== "" ? { pageToken: nextPageToken } : {}),
-            }
+            // const priceSpecificParams = {
+            //     minprice: index + 1,
+            //     maxprice: index + 1,
+            // }
+
+            const params =
+                nextPageToken === undefined || nextPageToken === ""
+                    ? sharedParams
+                    : {
+                          key: process.env.NEXT_PUBLIC_GMAPS_API_KEY,
+                          pagetoken: nextPageToken,
+                      }
 
             if (nextPageToken !== undefined) {
                 return axios
                     .get(`https://maps.googleapis.com/maps/api/place/nearbysearch/json`, {
-                        params: {
-                            ...sharedParams,
-                            ...priceSpecificParams,
-                        },
+                        params,
                     })
                     .then((result: AxiosResponse) => {
                         restaurants.push(...result.data.results)
+                        // console.log(`pushed ${result.data.results.length}`)
                         nextPageTokens[index] = result.data.next_page_token
+                        // console.log(`token: ${result.data.next_page_token}`)
                     })
             }
         })
@@ -90,8 +100,10 @@ const getNearbyRestaurants = async (req: NextRequest) => {
         counter++
 
         // Wait 2 seconds for next page tokens to become usable
-        if (counter < 2) await sleep(2000)
+        if (counter <= PAGINATIONS) await sleep(2000)
     }
+
+    // console.log(restaurants.length)
 
     return NextResponse.json(processAllAPIResults(restaurants, resultFilters), { status: 200 })
 }
