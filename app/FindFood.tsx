@@ -346,10 +346,13 @@ function FindFood() {
 
             <Divider />
 
-            {resLoading && (
-                <Grid container gap={2} direction="column" justifyContent="center" alignItems="center">
+            {!resLoading && (
+                <Grid container gap={1} direction="column" justifyContent="center" alignItems="center">
                     <CircularProgress />
                     <Typography variant="body1">Loading food 🤤</Typography>
+                    <Typography variant="body2" fontStyle="italic">
+                        Due to Google API restrictions, this may take up to 5 seconds.
+                    </Typography>
                 </Grid>
             )}
 
