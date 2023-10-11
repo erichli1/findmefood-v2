@@ -42,14 +42,12 @@ const getNearbyRestaurants = async (req: NextRequest) => {
     const radius = convertStringMilesToMeters(frontendParams.distance as string)
     const latLongArray = (frontendParams.location as string).split(",")
 
-    const params = {
-        params: {
-            key: process.env.NEXT_PUBLIC_GMAPS_API_KEY,
-            location: frontendParams.location,
-            radius: radius,
-            type: "restaurant",
-            opennow: true,
-        },
+    const sharedParams = {
+        key: process.env.NEXT_PUBLIC_GMAPS_API_KEY,
+        location: frontendParams.location,
+        radius: radius,
+        type: "restaurant",
+        opennow: true,
     }
 
     const resultFilters: ResultFilterParams = {
@@ -59,35 +57,40 @@ const getNearbyRestaurants = async (req: NextRequest) => {
         currentLong: latLongArray[1],
     }
 
-    let result: AxiosResponse = await axios.get(`https://maps.googleapis.com/maps/api/place/nearbysearch/json`, params)
+    const restaurants: Array<any> = []
+    const nextPageTokens: Array<string | undefined> = ["", "", "", ""]
 
-    let localNextPageToken = result.data.next_page_token
     let counter = 0
 
-    let restaurants = result.data.results
+    while (counter < 2) {
+        const apiPromises = nextPageTokens.map((nextPageToken, index) => {
+            const priceSpecificParams = {
+                minprice: index + 1,
+                maxprice: index + 1,
+                ...(nextPageToken !== undefined && nextPageToken !== "" ? { pageToken: nextPageToken } : {}),
+            }
 
-    // Get top 60 results from Google Maps through paging
-    while (localNextPageToken != null && counter < 2) {
-        const tempParams = {
-            params: {
-                key: process.env.NEXT_PUBLIC_GMAPS_API_KEY,
-                pagetoken: localNextPageToken,
-            },
-        }
+            if (nextPageToken !== undefined) {
+                return axios
+                    .get(`https://maps.googleapis.com/maps/api/place/nearbysearch/json`, {
+                        params: {
+                            ...sharedParams,
+                            ...priceSpecificParams,
+                        },
+                    })
+                    .then((result: AxiosResponse) => {
+                        restaurants.push(...result.data.results)
+                        nextPageTokens[index] = result.data.next_page_token
+                    })
+            }
+        })
 
-        // Token needs some time to become usable
-        await sleep(2000)
+        await Promise.all(apiPromises)
 
-        let temp: AxiosResponse = await axios.get(
-            `https://maps.googleapis.com/maps/api/place/nearbysearch/json`,
-            tempParams,
-        )
-        console.log("page " + (counter + 2) + " has " + temp.data.results.length + " results")
-
-        restaurants = [...restaurants, ...temp.data.results]
         counter++
 
-        localNextPageToken = temp.data.next_page_token
+        // Wait 2 seconds for next page tokens to become usable
+        if (counter < 2) await sleep(2000)
     }
 
     return NextResponse.json(processAllAPIResults(restaurants, resultFilters), { status: 200 })
