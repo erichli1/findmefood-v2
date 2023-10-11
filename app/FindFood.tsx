@@ -57,14 +57,15 @@ function FindFood() {
         { city: string; region: string; postal: string } | undefined
     >()
     const [locError, setLocError] = useState(false)
+    const [noLocationError, setNoLocationError] = useState<boolean>(false)
     const [currRating, setCurrRating] = useState<string>("4.0")
+    const [currRatingError, setCurrRatingError] = useState<boolean>(false)
     const [numRating, setNumRating] = useState<string>("1000")
-    const [mileRange, setMileRange] = useState<number>(1.5)
+    const [numRatingError, setNumRatingError] = useState<boolean>(false)
+    const [mileRange, setMileRange] = useState<string>("1.5")
+    const [mileRangeError, setMileRangeError] = useState<boolean>(false)
     const [resLoading, toggleResLoading] = useState(false)
     const [results, setResults] = useState<Array<Result> | undefined>()
-    const [formError, setFormError] = useState<"currRating" | "numRating" | "mileRange" | "location" | undefined>(
-        undefined,
-    )
 
     const [autocompleteLocationName, setAutocompleteLocationName] = useState<string>("")
 
@@ -107,20 +108,15 @@ function FindFood() {
     }
 
     const search = async () => {
-        if (mileRange <= 0) {
-            setFormError("mileRange")
-            return
-        } else if (parseFloat(currRating) <= 0 || parseFloat(currRating) > 5) {
-            setFormError("currRating")
-            return
-        } else if (parseFloat(numRating) <= 0) {
-            setFormError("numRating")
-            return
-        } else if (!location || location === "loading") {
-            setFormError("location")
+        if (!location || location === "loading") {
+            setNoLocationError(true)
             return
         } else {
-            setFormError(undefined)
+            setNoLocationError(false)
+        }
+
+        if (mileRangeError || currRatingError || numRatingError) {
+            return
         }
 
         toggleResLoading(true)
@@ -187,7 +183,7 @@ function FindFood() {
 
             <Box>
                 <Header text={"Where are you?"} />
-                {formError === "location" && (!location || location === "loading") && (
+                {noLocationError && (!location || location === "loading") && (
                     <Alert severity="error">Select a location</Alert>
                 )}
                 <FormGroup>
@@ -256,7 +252,9 @@ function FindFood() {
                         <TextField {...params} inputRef={ref} label="Search for places" variant="outlined" />
                     )}
                     inputValue={autocompleteLocationName}
-                    onInputChange={(event) => setAutocompleteLocationName((event.target as HTMLTextAreaElement).value)}
+                    onInputChange={(event) => {
+                        setAutocompleteLocationName((event.target as HTMLTextAreaElement).value)
+                    }}
                     sx={{
                         display: locationOpt === "input" ? "block" : "none",
                     }}
@@ -275,20 +273,38 @@ function FindFood() {
                         <TextField
                             label="Min. stars"
                             type="number"
-                            onChange={(e) => setCurrRating(e.target.value)}
+                            onChange={(e) => {
+                                setCurrRating(e.target.value)
+                                if (
+                                    e.target.value === "" ||
+                                    parseFloat(e.target.value) <= 0 ||
+                                    parseFloat(e.target.value) > 5
+                                ) {
+                                    setCurrRatingError(true)
+                                } else {
+                                    setCurrRatingError(false)
+                                }
+                            }}
                             value={currRating}
-                            error={formError === "currRating"}
-                            helperText={formError === "currRating" ? "Enter a number between 1 to 5" : ""}
+                            error={currRatingError}
+                            helperText={currRatingError ? "Enter a number between 1 to 5" : ""}
                         />
                     </Grid>
                     <Grid item xs={6}>
                         <TextField
                             label="# reviews"
                             type="number"
-                            onChange={(e) => setNumRating(e.target.value)}
+                            onChange={(e) => {
+                                setNumRating(e.target.value)
+                                if (e.target.value === "" || parseFloat(e.target.value) <= 0) {
+                                    setNumRatingError(true)
+                                } else {
+                                    setNumRatingError(false)
+                                }
+                            }}
                             value={numRating}
-                            error={formError === "numRating"}
-                            helperText={formError === "numRating" ? "Enter a positive number" : ""}
+                            error={numRatingError}
+                            helperText={numRatingError ? "Enter a positive number" : ""}
                         />
                     </Grid>
                 </Grid>
@@ -303,15 +319,27 @@ function FindFood() {
                         label="Max miles away"
                         placeholder="1.5"
                         type="number"
-                        onChange={(e) => setMileRange(parseFloat(e.target.value))}
+                        onChange={(e) => {
+                            setMileRange(e.target.value)
+                            if (e.target.value === "" || parseFloat(e.target.value) <= 0) {
+                                setMileRangeError(true)
+                            } else {
+                                setMileRangeError(false)
+                            }
+                        }}
                         value={mileRange}
-                        error={formError === "mileRange"}
-                        helperText={formError === "mileRange" ? "Enter a positive number" : ""}
+                        error={mileRangeError}
+                        helperText={mileRangeError ? "Enter a positive number" : ""}
                     />
                 </Grid>
             </Grid>
 
-            <Button onClick={() => search()} variant="contained" color="primary">
+            <Button
+                onClick={() => search()}
+                variant="contained"
+                color="primary"
+                disabled={currRatingError || numRatingError || mileRangeError}
+            >
                 {results && results.length > 0 ? "Search again" : "Find me food!"}
             </Button>
 
