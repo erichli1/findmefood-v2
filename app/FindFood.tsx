@@ -120,6 +120,7 @@ function FindFood() {
         }
 
         toggleResLoading(true)
+        setSortBy("")
 
         const res = await axios.get(
             `/api/findfood?location=${location.latitude},${location.longitude}&distance=${
