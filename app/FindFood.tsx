@@ -346,7 +346,7 @@ function FindFood() {
 
             <Divider />
 
-            {!resLoading && (
+            {resLoading && (
                 <Grid container gap={1} direction="column" justifyContent="center" alignItems="center">
                     <CircularProgress />
                     <Typography variant="body1">Loading food 🤤</Typography>
